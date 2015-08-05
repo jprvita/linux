@@ -26,7 +26,7 @@
 #include <stddef.h>
 #include <drm/drm.h>
 
-struct drm_meson_gem_create_with_ump {
+struct drm_meson_gem_create {
 	uint64_t size;
 	unsigned int flags;
 	unsigned int handle;
@@ -68,17 +68,17 @@ struct drm_meson_cache_operations_control {
 	enum drm_meson_cache_op_control op;
 };
 
-#define DRM_MESON_GEM_CREATE_WITH_UMP       0x00
+#define DRM_MESON_GEM_CREATE                0x00
 #define DRM_MESON_MSYNC                     0x01
 #define DRM_MESON_GEM_SET_DOMAIN            0x02
 #define DRM_MESON_CACHE_OPERATIONS_CONTROL  0x03
 #define DRM_MESON_NUM_IOCTLS                0x04
 
 /* Use flags */
-#define DRM_MESON_GEM_CREATE_WITH_UMP_FLAG_SCANOUT 0x01
-#define DRM_MESON_GEM_CREATE_WITH_UMP_FLAG_TEXTURE 0x02
+#define DRM_MESON_GEM_CREATE_FLAG_SCANOUT 0x01
+#define DRM_MESON_GEM_CREATE_FLAG_TEXTURE 0x02
 
-#define DRM_IOCTL_MESON_GEM_CREATE_WITH_UMP  DRM_IOWR(DRM_COMMAND_BASE + DRM_MESON_GEM_CREATE_WITH_UMP, struct drm_meson_gem_create_with_ump)
+#define DRM_IOCTL_MESON_GEM_CREATE  DRM_IOWR(DRM_COMMAND_BASE + DRM_MESON_GEM_CREATE_WITH_UMP, struct drm_meson_gem_create_with_ump)
 #define DRM_IOCTL_MESON_MSYNC  DRM_IOWR(DRM_COMMAND_BASE + DRM_MESON_MSYNC, struct drm_meson_msync)
 #define DRM_IOCTL_MESON_GEM_SET_DOMAIN  DRM_IOWR(DRM_COMMAND_BASE + DRM_MESON_GEM_SET_DOMAIN, struct drm_meson_gem_set_domain)
 #define DRM_IOCTL_MESON_CACHE_OPERATIONS_CONTROL  DRM_IOWR(DRM_COMMAND_BASE + DRM_MESON_CACHE_OPERATIONS_CONTROL, struct drm_meson_cache_operations_control)

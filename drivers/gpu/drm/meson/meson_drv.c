@@ -1177,10 +1177,10 @@ static void meson_gem_free_object(struct drm_gem_object *obj)
 	drm_gem_cma_free_object(obj);
 }
 
-static int meson_ioctl_create_with_ump(struct drm_device *dev, void *data,
+static int meson_ioctl_create(struct drm_device *dev, void *data,
 				       struct drm_file *file)
 {
-	struct drm_meson_gem_create_with_ump *args = data;
+	struct drm_meson_gem_create *args = data;
 	struct drm_gem_cma_object *cma_obj;
 	ump_dd_physical_block ump_mem;
 	unsigned int size;
@@ -1204,6 +1204,7 @@ static int meson_ioctl_create_with_ump(struct drm_device *dev, void *data,
 		dma_set_attr(DMA_ATTR_NON_CONSISTENT, &dma_attrs);
 	}
 
+	/* we return the GEM handle to userspace in args->handle */
 	cma_obj = drm_gem_cma_create_with_handle(file, dev, size, &args->handle, &dma_attrs);
 	if (IS_ERR(cma_obj))
 		return PTR_ERR(cma_obj);
@@ -1211,13 +1212,14 @@ static int meson_ioctl_create_with_ump(struct drm_device *dev, void *data,
 	ump_mem.addr = cma_obj->paddr;
 	ump_mem.size = size;
 	cma_obj->ump_handle = ump_dd_handle_create_from_phys_blocks2(&ump_mem, 1, !!(args->flags & DRM_MESON_GEM_CREATE_WITH_UMP_FLAG_TEXTURE));
+	/* we return the UMP secure id to userspace in args->ump_secure_id */
 	args->ump_secure_id = ump_dd_secure_id_get(cma_obj->ump_handle);
 
 	return PTR_ERR_OR_ZERO(cma_obj);
 }
 
 static const struct drm_ioctl_desc meson_ioctls[] = {
-	DRM_IOCTL_DEF_DRV(MESON_GEM_CREATE_WITH_UMP, meson_ioctl_create_with_ump, DRM_UNLOCKED|DRM_AUTH|DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(MESON_GEM_CREATE, meson_ioctl_create, DRM_UNLOCKED|DRM_AUTH|DRM_RENDER_ALLOW),
 	DRM_IOCTL_DEF_DRV(MESON_MSYNC, meson_ioctl_msync, DRM_UNLOCKED|DRM_AUTH|DRM_RENDER_ALLOW),
 	DRM_IOCTL_DEF_DRV(MESON_GEM_SET_DOMAIN, meson_ioctl_set_domain, DRM_UNLOCKED|DRM_AUTH|DRM_RENDER_ALLOW),
 	DRM_IOCTL_DEF_DRV(MESON_CACHE_OPERATIONS_CONTROL, meson_ioctl_cache_operations_control, DRM_UNLOCKED|DRM_AUTH|DRM_RENDER_ALLOW),
