@@ -44,7 +44,7 @@
 
 #include "../hci_uart.h"
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 #include "../hci_rtl_coex.h"
 #endif
 
@@ -178,7 +178,7 @@ static int hci_uart_open(struct hci_dev *hdev)
 
 	set_bit(HCI_RUNNING, &hdev->flags);
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	rtk_uart_coex_open(hdev);
 #endif
 
@@ -218,7 +218,7 @@ static int hci_uart_close(struct hci_dev *hdev)
 	hci_uart_flush(hdev);
 	hdev->flush = NULL;
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	rtk_uart_coex_close();
 #endif
 
@@ -249,7 +249,7 @@ int hci_uart_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 
 	BT_DBG("%s: type %d len %d", hdev->name, bt_cb(skb)->pkt_type, skb->len);
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	if(bt_cb(skb)->pkt_type == HCI_COMMAND_PKT)
 		rtk_uart_parse_cmd(skb);
 	if(bt_cb(skb)->pkt_type == HCI_ACLDATA_PKT)
@@ -476,7 +476,7 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 		return -ENODEV;
 	}
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	rtk_uart_coex_probe(hdev);
 #endif
 
@@ -641,7 +641,7 @@ static int __init hci_uart_init(void)
 //#endif
 //Realtek_add_end
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	rtk_uart_coex_init();
 #endif
 
@@ -675,7 +675,7 @@ static void __exit hci_uart_exit(void)
 	if ((err = tty_unregister_ldisc(N_HCI)))
 		BT_ERR("Can't unregister HCI line discipline (%d)", err);
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	rtk_uart_coex_exit();
 #endif
 }

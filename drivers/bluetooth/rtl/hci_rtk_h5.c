@@ -44,7 +44,7 @@
 
 #include "../hci_uart.h"
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 #include "../hci_rtl_coex.h"
 extern rtk_uart_coexistence_info uart_coex_info;
 #endif
@@ -551,7 +551,7 @@ static void h5_complete_rx_pkt(struct hci_uart *hu)
 	struct h5_struct *h5 = hu->priv;
 	int pass_up;
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	u8* pp;
 	u8 ev_code;
 	int need_sendto_core = 1;
@@ -631,7 +631,7 @@ static void h5_complete_rx_pkt(struct hci_uart *hu)
 		/* Pull out H5 hdr */
 		skb_pull(h5->rx_skb, 4);
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	if(bt_cb(h5->rx_skb)->pkt_type == HCI_EVENT_PKT) {
 		rtk_uart_parse_event(h5->rx_skb);
 		pp = (u8*)(h5->rx_skb->data);

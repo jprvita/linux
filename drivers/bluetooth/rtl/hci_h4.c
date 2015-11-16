@@ -44,7 +44,7 @@
 
 #include "../hci_uart.h"
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 #include "../hci_rtl_coex.h"
 extern rtk_uart_coexistence_info uart_coex_info;
 #endif
@@ -169,7 +169,7 @@ static int h4_recv(struct hci_uart *hu, const void *data, int count)
 	struct hci_sco_hdr   *sh;
 	register int len, type, dlen;
 
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 	u8* pp;
 	u8 ev_code;
 	int need_sendto_core = 1;
@@ -192,7 +192,7 @@ static int h4_recv(struct hci_uart *hu, const void *data, int count)
 			switch (h4->rx_state) {
 			case H4_W4_DATA:
 				BT_DBG("Complete data");
-#ifdef BTCOEX
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
 			if(bt_cb(h4->rx_skb)->pkt_type == HCI_EVENT_PKT) {
 				rtk_uart_parse_event(h4->rx_skb);
 				pp = (u8*)(h4->rx_skb->data);

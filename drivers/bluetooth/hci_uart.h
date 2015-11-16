@@ -27,10 +27,6 @@
 #define N_HCI	15
 #endif
 
-#ifdef CONFIG_BT_RTL_VENDOR
-#define BTCOEX
-#endif
-
 /* Ioctls */
 #define HCIUARTSETPROTO		_IOW('U', 200, int)
 #define HCIUARTGETPROTO		_IOR('U', 201, int)
