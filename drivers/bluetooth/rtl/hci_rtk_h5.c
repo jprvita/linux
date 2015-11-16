@@ -42,7 +42,7 @@
 #include <net/bluetooth/hci_core.h>
 #include <linux/version.h>
 
-#include "hci_uart.h"
+#include "../hci_uart.h"
 
 #ifdef BTCOEX
 #include "rtk_coex.h"
@@ -686,10 +686,10 @@ static u16 bscp_get_crc(struct h5_struct *h5)
 }
 
 /* Recv data */
-static int h5_recv(struct hci_uart *hu, void *data, int count)
+static int h5_recv(struct hci_uart *hu, const void *data, int count)
 {
 	struct h5_struct *h5 = hu->priv;
-	register unsigned char *ptr;
+	register const unsigned char *ptr;
 
 	BT_DBG("hu %p count %d rx_state %d rx_count %ld", 
 		hu, count, h5->rx_state, h5->rx_count);

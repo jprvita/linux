@@ -42,7 +42,7 @@
 #include <net/bluetooth/bluetooth.h>
 #include <net/bluetooth/hci_core.h>
 
-#include "hci_uart.h"
+#include "../hci_uart.h"
 
 #ifdef BTCOEX
 #include "rtk_coex.h"
@@ -60,9 +60,9 @@
 static int reset = 0;
 #endif
 
-static struct hci_uart_proto *hup[HCI_UART_MAX_PROTO];
+static const struct hci_uart_proto *hup[HCI_UART_MAX_PROTO];
 
-int hci_uart_register_proto(struct hci_uart_proto *p)
+int hci_uart_register_proto(const struct hci_uart_proto *p)
 {
 	if (p->id >= HCI_UART_MAX_PROTO)
 		return -EINVAL;
@@ -75,7 +75,7 @@ int hci_uart_register_proto(struct hci_uart_proto *p)
 	return 0;
 }
 
-int hci_uart_unregister_proto(struct hci_uart_proto *p)
+int hci_uart_unregister_proto(const struct hci_uart_proto *p)
 {
 	if (p->id >= HCI_UART_MAX_PROTO)
 		return -EINVAL;
@@ -88,7 +88,7 @@ int hci_uart_unregister_proto(struct hci_uart_proto *p)
 	return 0;
 }
 
-static struct hci_uart_proto *hci_uart_get_proto(unsigned int id)
+static const struct hci_uart_proto *hci_uart_get_proto(unsigned int id)
 {
 	if (id >= HCI_UART_MAX_PROTO)
 		return NULL;
@@ -310,8 +310,6 @@ static int hci_uart_tty_open(struct tty_struct *tty)
 	hu->tty = tty;
 	tty->receive_room = 65536;
 
-	spin_lock_init(&hu->rx_lock);
-
 	/* Flush any pending characters in the driver and line discipline. */
 
 	/* FIXME: why is this needed. Note don't use ldisc_ref here as the
@@ -404,10 +402,8 @@ static void hci_uart_tty_receive(struct tty_struct *tty, const u8 *data, char *f
 	if (!test_bit(HCI_UART_PROTO_SET, &hu->flags))
 		return;
 
-	spin_lock(&hu->rx_lock);
 	hu->proto->recv(hu, (void *) data, count);
 	hu->hdev->stat.byte_rx += count;
-	spin_unlock(&hu->rx_lock);
 
 	tty_unthrottle(tty);
 }
@@ -489,7 +485,7 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 
 static int hci_uart_set_proto(struct hci_uart *hu, int id)
 {
-	struct hci_uart_proto *p;
+	const struct hci_uart_proto *p;
 	int err;
 
 	p = hci_uart_get_proto(id);

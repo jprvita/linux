@@ -42,7 +42,7 @@
 #include <net/bluetooth/hci_core.h>
 #include <linux/version.h>
 
-#include "hci_uart.h"
+#include "../hci_uart.h"
 
 #ifdef BTCOEX
 #include "rtk_coex.h"
@@ -160,10 +160,10 @@ static inline int h4_check_data_len(struct hci_dev *hdev, struct h4_struct *h4, 
 }
 
 /* Recv data */
-static int h4_recv(struct hci_uart *hu, void *data, int count)
+static int h4_recv(struct hci_uart *hu, const void *data, int count)
 {
 	struct h4_struct *h4 = hu->priv;
-	register char *ptr;
+	register const char *ptr;
 	struct hci_event_hdr *eh;
 	struct hci_acl_hdr   *ah;
 	struct hci_sco_hdr   *sh;

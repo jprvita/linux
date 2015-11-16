@@ -13,7 +13,7 @@
 #include <net/bluetooth/hci_core.h>
 #include <net/bluetooth/l2cap.h>
 
-#include "hci_uart.h"
+#include "../hci_uart.h"
 #include "rtk_coex.h"
 
 #define RTK_VERSION "1.1"
@@ -232,7 +232,8 @@ static void hci_cmd_task(unsigned long arg)
     if((uart_coex_info.num_hci_cmd_packet) && (skb = skb_dequeue(&uart_coex_info.cmd_q))) {
         p = (uint8_t *)(skb->data);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
-        hci_uart_send_frame(uart_coex_info.hdev, skb);
+        //hci_uart_send_frame(uart_coex_info.hdev, skb);
+	uart_coex_info.hdev->send(uart_coex_info.hdev, skb);
 #else
         hci_uart_send_frame(skb);
 #endif
