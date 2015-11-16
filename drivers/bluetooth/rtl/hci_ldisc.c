@@ -45,7 +45,7 @@
 #include "../hci_uart.h"
 
 #ifdef BTCOEX
-#include "rtk_coex.h"
+#include "../hci_rtl_coex.h"
 #endif
 
 #define VERSION "2.2"

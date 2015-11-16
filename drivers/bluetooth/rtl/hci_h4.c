@@ -45,7 +45,7 @@
 #include "../hci_uart.h"
 
 #ifdef BTCOEX
-#include "rtk_coex.h"
+#include "../hci_rtl_coex.h"
 extern rtk_uart_coexistence_info uart_coex_info;
 #endif
 

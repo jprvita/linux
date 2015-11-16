@@ -13,8 +13,8 @@
 #include <net/bluetooth/hci_core.h>
 #include <net/bluetooth/l2cap.h>
 
-#include "../hci_uart.h"
-#include "rtk_coex.h"
+#include "hci_uart.h"
+#include "hci_rtl_coex.h"
 
 #define RTK_VERSION "1.1"
 
