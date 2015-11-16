@@ -48,6 +48,9 @@
 #include "btintel.h"
 #include "btbcm.h"
 #include "hci_uart.h"
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+#include "hci_rtl_coex.h"
+#endif
 
 #define VERSION "2.3"
 
@@ -206,6 +209,9 @@ int hci_uart_init_ready(struct hci_uart *hu)
 static int hci_uart_open(struct hci_dev *hdev)
 {
 	BT_DBG("%s %p", hdev->name, hdev);
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+	rtk_uart_coex_open(hdev);
+#endif
 
 	/* Nothing to do for UART driver */
 	return 0;
@@ -240,6 +246,9 @@ static int hci_uart_close(struct hci_dev *hdev)
 
 	hci_uart_flush(hdev);
 	hdev->flush = NULL;
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+	rtk_uart_coex_close();
+#endif
 	return 0;
 }
 
@@ -251,6 +260,12 @@ static int hci_uart_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 	BT_DBG("%s: type %d len %d", hdev->name, hci_skb_pkt_type(skb),
 	       skb->len);
 
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+	if(bt_cb(skb)->pkt_type == HCI_COMMAND_PKT)
+		rtk_uart_parse_cmd(skb);
+	if(bt_cb(skb)->pkt_type == HCI_ACLDATA_PKT)
+		rtk_uart_parse_l2cap_data_tx(skb);
+#endif
 	hu->proto->enqueue(hu, skb);
 
 	hci_uart_tx_wakeup(hu);
@@ -621,6 +636,10 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 
 	set_bit(HCI_UART_REGISTERED, &hu->flags);
 
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+	rtk_uart_coex_probe(hdev);
+#endif
+
 	return 0;
 }
 
@@ -804,6 +823,12 @@ static int __init hci_uart_init(void)
 #ifdef CONFIG_BT_HCIUART_QCA
 	qca_init();
 #endif
+#ifdef CONFIG_BT_RTL_VENDOR
+	h5_init();
+#endif
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+	rtk_uart_coex_init();
+#endif
 
 	return 0;
 }
@@ -836,11 +861,18 @@ static void __exit hci_uart_exit(void)
 #ifdef CONFIG_BT_HCIUART_QCA
 	qca_deinit();
 #endif
+#ifdef CONFIG_BT_RTL_VENDOR
+	h5_deinit();
+#endif
 
 	/* Release tty registration of line discipline */
 	err = tty_unregister_ldisc(N_HCI);
 	if (err)
 		BT_ERR("Can't unregister HCI line discipline (%d)", err);
+
+#ifdef CONFIG_BT_HCIUART_RTL_COEX
+	rtk_uart_coex_exit();
+#endif
 }
 
 module_init(hci_uart_init);
