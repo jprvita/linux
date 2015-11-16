@@ -183,7 +183,7 @@ int qca_init(void);
 int qca_deinit(void);
 #endif
 
-#ifdef CONFIG_BT_RTL_VENDOR
+#ifdef CONFIG_BT_HCIUART_RTL_H5
 int h5_init(void);
 int h5_deinit(void);
 #endif

@@ -42,10 +42,10 @@
 #include <net/bluetooth/hci_core.h>
 #include <linux/version.h>
 
-#include "../hci_uart.h"
+#include "hci_uart.h"
 
 #ifdef CONFIG_BT_HCIUART_RTL_COEX
-#include "../hci_rtl_coex.h"
+#include "hci_rtl_coex.h"
 extern rtk_uart_coexistence_info uart_coex_info;
 #endif
 

@@ -2,24 +2,6 @@
 menu "Bluetooth device drivers"
 	depends on BT
 
-config BT_GENERIC
-	bool "Bluetooth generic device drivers"
-	default y
-
-config BT_RTL_VENDOR
-	bool "Vendor-provided Bluetooth Realtek device drivers"
-	default n
-	depends on !BT_GENERIC
-
-config BT_HCIUART_RTL_COEX
-	bool "Bluetooth / WiFi Coexistence for vendor-provided Bluetooth Realtek device drivers"
-	default y
-	depends on !BT_GENERIC
-	depends on BT_RTL_VENDOR
-
-menu "Bluetooth device drivers"
-	depends on BT_GENERIC
-
 config BT_INTEL
 	tristate
 	select REGMAP
@@ -187,6 +169,29 @@ config BT_HCIUART_QCA
 
 	  Say Y here to compile support for QCA protocol.
 
+config BT_HCIUART_RTL_H4
+	bool "Realtek H4 protocol support"
+	depends on BT_HCIUART
+	help
+	  Realtek-provided version of the UART H4 protocol.
+
+	  Say Y here to compile support for Realtek HCI H4 protocol.
+
+config BT_HCIUART_RTL_H5
+	bool "Realtek H5 protocol support"
+	depends on BT_HCIUART
+	depends on !BT_HCIUART_3WIRE
+	help
+	  Realtek-provided version of the UART H5 protocol.
+
+	  Say Y here to compile support for Realtek HCI H5 protocol.
+
+config BT_HCIUART_RTL_COEX
+	bool "Realtek drivers Bluetooth / WiFi Coexistence"
+	default y
+	depends on BT_HCIUART
+	depends on BT_HCIUART_RTL_H4 || BT_HCIUART_RTL_H5
+
 config BT_HCIBCM203X
 	tristate "HCI BCM203x USB driver"
 	depends on USB
@@ -338,5 +343,4 @@ config BT_WILINK
 	  Say Y here to compile support for Texas Instrument's WiLink7 driver
 	  into the kernel or say M to compile it as module (btwilink).
 
-endmenu
 endmenu

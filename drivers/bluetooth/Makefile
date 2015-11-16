@@ -23,7 +23,6 @@ obj-$(CONFIG_BT_WILINK)		+= btwilink.o
 obj-$(CONFIG_BT_BCM)		+= btbcm.o
 obj-$(CONFIG_BT_RTL)		+= btrtl.o
 obj-$(CONFIG_BT_QCA)		+= btqca.o
-obj-$(CONFIG_BT_RTL_VENDOR)	+= rtl/
 
 btmrvl-y			:= btmrvl_main.o
 btmrvl-$(CONFIG_DEBUG_FS)	+= btmrvl_debugfs.o
@@ -37,6 +36,8 @@ hci_uart-$(CONFIG_BT_HCIUART_3WIRE)	+= hci_h5.o
 hci_uart-$(CONFIG_BT_HCIUART_INTEL)	+= hci_intel.o
 hci_uart-$(CONFIG_BT_HCIUART_BCM)	+= hci_bcm.o
 hci_uart-$(CONFIG_BT_HCIUART_QCA)	+= hci_qca.o
+hci_uart-$(CONFIG_BT_HCIUART_RTL_H4)	+= hci_rtl_h4.o
+hci_uart-$(CONFIG_BT_HCIUART_RTL_H5)	+= hci_rtl_h5.o
 hci_uart-$(CONFIG_BT_HCIUART_RTL_COEX)	+= hci_rtl_coex.o
 hci_uart-objs				:= $(hci_uart-y)
 

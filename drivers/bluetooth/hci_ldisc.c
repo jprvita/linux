@@ -823,7 +823,7 @@ static int __init hci_uart_init(void)
 #ifdef CONFIG_BT_HCIUART_QCA
 	qca_init();
 #endif
-#ifdef CONFIG_BT_RTL_VENDOR
+#ifdef CONFIG_BT_HCIUART_RTL_H5
 	h5_init();
 #endif
 #ifdef CONFIG_BT_HCIUART_RTL_COEX
@@ -861,7 +861,7 @@ static void __exit hci_uart_exit(void)
 #ifdef CONFIG_BT_HCIUART_QCA
 	qca_deinit();
 #endif
-#ifdef CONFIG_BT_RTL_VENDOR
+#ifdef CONFIG_BT_HCIUART_RTL_H5
 	h5_deinit();
 #endif
 
