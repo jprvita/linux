@@ -60,6 +60,14 @@
 	memory {
 		reg = <0x40000000 0x40000000>;
 	};
+
+	bt-dev {
+		compatible = "amlogic,bt-dev";
+		dev_name = "bt-dev";
+		status = "ok";
+		gpio_reset = "GPIOX_11";
+		gpio_en = "GPIOX_20";
+	};
 };
 
 &uart_AO {
