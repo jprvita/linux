@@ -1,0 +1,14 @@
+
+menu "Bluetooth Device Support"
+    depends on AML_VENDOR_DRIVERS
+    depends on BT
+
+config AML_BT_RFKILL
+    bool "Bluetooth RFKill support"
+    depends on RFKILL
+    select BACKLIGHT_CLASS_DEVICE
+    default n
+    help
+      Say Y here if you want to use the BT device.
+
+endmenu

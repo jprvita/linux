@@ -1,0 +1,11 @@
+#
+# Amlogic driver configuration
+#
+menuconfig AML_VENDOR_DRIVERS
+	bool "Amlogic device drivers"
+	help
+	  This menu contains device drivers provided by Amlogic.
+
+if AML_VENDOR_DRIVERS
+source "drivers/amlogic/bluetooth/Kconfig"
+endif # AML_VENDOR_DRIVERS
