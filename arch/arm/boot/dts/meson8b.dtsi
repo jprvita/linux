@@ -181,6 +181,14 @@
 					function = "uart_ao";
 				};
 			};
+
+			uart_b_pins: uart_b {
+				mux {
+					groups = "uart_tx_b0", "uart_rx_b0",
+						 "uart_cts_b0", "uart_rts_b0";
+					function = "uart_b";
+				};
+			};
 		};
 	};
 }; /* end of / */
