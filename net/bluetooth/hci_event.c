@@ -39,6 +39,39 @@
 #define ZERO_KEY "\x00\x00\x00\x00\x00\x00\x00\x00" \
 		 "\x00\x00\x00\x00\x00\x00\x00\x00"
 
+#define PRINTADV_NEW(hdev, addr, adv_t, fmt, ...)			\
+	bt_dev_warn(hdev, "%02X:%02X:%02X:%02X:%02X:%02X %s: " fmt,	\
+		   (addr)->b[5], (addr)->b[4], (addr)->b[3],		\
+		   (addr)->b[2], (addr)->b[1], (addr)->b[0],		\
+		   adv_t == LE_ADV_IND ? "ADV_IND" :			\
+		   adv_t == LE_ADV_DIRECT_IND ? "ADV_DIRECT_IND" :	\
+		   adv_t == LE_ADV_SCAN_IND   ? "ADV_SCAN_IND" :	\
+		   adv_t == LE_ADV_NONCONN_IND? "ADV_NONCONN_IND" :	\
+		   adv_t == LE_ADV_SCAN_RSP   ? "ADV_SCAN_RSP" : NULL,	\
+		   ##__VA_ARGS__)
+
+#define PRINTADV_ATT(hdev, addr, adv_t, fmt, ...)			\
+	bt_dev_err(hdev, "%02X:%02X:%02X:%02X:%02X:%02X %s: " fmt,	\
+		   (addr)->b[5], (addr)->b[4], (addr)->b[3],		\
+		   (addr)->b[2], (addr)->b[1], (addr)->b[0],		\
+		   adv_t == LE_ADV_IND ? "ADV_IND" :			\
+		   adv_t == LE_ADV_DIRECT_IND ? "ADV_DIRECT_IND" :	\
+		   adv_t == LE_ADV_SCAN_IND   ? "ADV_SCAN_IND" :	\
+		   adv_t == LE_ADV_NONCONN_IND? "ADV_NONCONN_IND" :	\
+		   adv_t == LE_ADV_SCAN_RSP   ? "ADV_SCAN_RSP" : NULL,	\
+		   ##__VA_ARGS__)
+
+#define PRINTADV_DBG(hdev, addr, adv_t, fmt, ...)			\
+	bt_dev_info(hdev, "%02X:%02X:%02X:%02X:%02X:%02X %s: " fmt,	\
+		   (addr)->b[5], (addr)->b[4], (addr)->b[3],		\
+		   (addr)->b[2], (addr)->b[1], (addr)->b[0],		\
+		   adv_t == LE_ADV_IND ? "ADV_IND" :			\
+		   adv_t == LE_ADV_DIRECT_IND ? "ADV_DIRECT_IND" :	\
+		   adv_t == LE_ADV_SCAN_IND   ? "ADV_SCAN_IND" :	\
+		   adv_t == LE_ADV_NONCONN_IND? "ADV_NONCONN_IND" :	\
+		   adv_t == LE_ADV_SCAN_RSP   ? "ADV_SCAN_RSP" : NULL,	\
+		   ##__VA_ARGS__)
+
 /* Handle HCI Event packets */
 
 static void hci_cc_inquiry_cancel(struct hci_dev *hdev, struct sk_buff *skb)
@@ -5168,6 +5201,8 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 		return;
 	}
 
+	PRINTADV_NEW(hdev, bdaddr, type, "new advertising report");
+
 	/* Find the end of the data in case the report contains padded zero
 	 * bytes at the end causing an invalid length value.
 	 *
@@ -5193,24 +5228,35 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 	 * controller address.
 	 */
 	if (direct_addr) {
+		PRINTADV_DBG(hdev, bdaddr, type, "dest %02X:%02X:%02X:%02X:%02X:%02X",
+			     direct_addr->b[5], direct_addr->b[4], direct_addr->b[3],
+			     direct_addr->b[2], direct_addr->b[1], direct_addr->b[0]);
 		/* Only resolvable random addresses are valid for these
 		 * kind of reports and others can be ignored.
 		 */
-		if (!hci_bdaddr_is_rpa(direct_addr, direct_addr_type))
+		if (!hci_bdaddr_is_rpa(direct_addr, direct_addr_type)) {
+			PRINTADV_ATT(hdev, bdaddr, type, "not hci_bdaddr_is_rpa, returning");
 			return;
+		}
 
 		/* If the controller is not using resolvable random
 		 * addresses, then this report can be ignored.
 		 */
-		if (!hci_dev_test_flag(hdev, HCI_PRIVACY))
+		if (!hci_dev_test_flag(hdev, HCI_PRIVACY)) {
+			PRINTADV_ATT(hdev, bdaddr, type, "not HCI_PRIVACY, returning");
 			return;
+		}
 
 		/* If the local IRK of the controller does not match
 		 * with the resolvable random address provided, then
 		 * this report can be ignored.
 		 */
-		if (!smp_irk_matches(hdev, hdev->irk, direct_addr))
+		if (!smp_irk_matches(hdev, hdev->irk, direct_addr)) {
+			PRINTADV_ATT(hdev, bdaddr, type, "not smp_irk_matches, returning");
 			return;
+		}
+
+		PRINTADV_DBG(hdev, bdaddr, type, "passed all ADV_DIRECT checks, continuing");
 	}
 
 	/* Check if we need to convert to identity address */
@@ -5239,18 +5285,25 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 	 * except for devices marked as CONN_REPORT for which we do send
 	 * device found events.
 	 */
+	PRINTADV_DBG(hdev, bdaddr, type, "LE scan type: %s",
+		     hdev->le_scan_type == LE_SCAN_PASSIVE ? "passive" : "active");
 	if (hdev->le_scan_type == LE_SCAN_PASSIVE) {
-		if (type == LE_ADV_DIRECT_IND)
+		if (type == LE_ADV_DIRECT_IND) {
+			PRINTADV_ATT(hdev, bdaddr, type, "ADV_DIRECT_IND during passive scanning, returning");
 			return;
+		}
 
 		if (!hci_pend_le_action_lookup(&hdev->pend_le_reports,
-					       bdaddr, bdaddr_type))
+					       bdaddr, bdaddr_type)) {
+			PRINTADV_ATT(hdev, bdaddr, type, "no pending LE action during passive scanning, returning");
 			return;
+		}
 
 		if (type == LE_ADV_NONCONN_IND || type == LE_ADV_SCAN_IND)
 			flags = MGMT_DEV_FOUND_NOT_CONNECTABLE;
 		else
 			flags = 0;
+		PRINTADV_ATT(hdev, bdaddr, type, "calling mgmt_device_found during passive scanning and returning");
 		mgmt_device_found(hdev, bdaddr, LE_LINK, bdaddr_type, NULL,
 				  rssi, flags, data, len, NULL, 0);
 		return;
@@ -5286,11 +5339,13 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 		 * later merging.
 		 */
 		if (type == LE_ADV_IND || type == LE_ADV_SCAN_IND) {
+			PRINTADV_ATT(hdev, bdaddr, type, "no pending ADV, storing ADV that will trigger a SCAN_REQ and returning");
 			store_pending_adv_report(hdev, bdaddr, bdaddr_type,
 						 rssi, flags, data, len);
 			return;
 		}
 
+		PRINTADV_ATT(hdev, bdaddr, type, "no pending ADV, calling mgmt_device_found for ADV that will not trigger a SCAN_REQ and returning");
 		mgmt_device_found(hdev, bdaddr, LE_LINK, bdaddr_type, NULL,
 				  rssi, flags, data, len, NULL, 0);
 		return;
@@ -5300,23 +5355,39 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 	match = (!bacmp(bdaddr, &d->last_adv_addr) &&
 		 bdaddr_type == d->last_adv_addr_type);
 
+	PRINTADV_DBG(hdev, bdaddr, type, "pending ADV exists for %02X:%02X:%02X:%02X:%02X:%02X type %s",
+		     d->last_adv_addr.b[5], d->last_adv_addr.b[4], d->last_adv_addr.b[3],
+		     d->last_adv_addr.b[2], d->last_adv_addr.b[1], d->last_adv_addr.b[0],
+		     d->last_adv_addr_type == LE_ADV_IND ? "LE_ADV_IND" :
+		     d->last_adv_addr_type == LE_ADV_DIRECT_IND ? "LE_ADV_DIRECT_IND" :
+		     d->last_adv_addr_type == LE_ADV_SCAN_IND   ? "LE_ADV_SCAN_IND" :
+		     d->last_adv_addr_type == LE_ADV_NONCONN_IND? "LE_ADV_NONCONN_IND" :
+		     d->last_adv_addr_type == LE_ADV_SCAN_RSP   ? "LE_ADV_SCAN_RSP" :
+		     NULL);
+	PRINTADV_DBG(hdev, bdaddr, type, "current ADV %s pending ADV",
+		     match ? "MATCHES" : "DOES NOT MATCH");
+
 	/* If the pending data doesn't match this report or this isn't a
 	 * scan response (e.g. we got a duplicate ADV_IND) then force
 	 * sending of the pending data.
 	 */
 	if (type != LE_ADV_SCAN_RSP || !match) {
 		/* Send out whatever is in the cache, but skip duplicates */
-		if (!match)
+		if (!match) {
+			PRINTADV_DBG(hdev, bdaddr, type, "calling mgmt_device_found for pending ADV not matching current ADV and continuing");
 			mgmt_device_found(hdev, &d->last_adv_addr, LE_LINK,
 					  d->last_adv_addr_type, NULL,
 					  d->last_adv_rssi, d->last_adv_flags,
 					  d->last_adv_data,
 					  d->last_adv_data_len, NULL, 0);
+			/*XXX: return? */
+		}
 
 		/* If the new report will trigger a SCAN_REQ store it for
 		 * later merging.
 		 */
 		if (type == LE_ADV_IND || type == LE_ADV_SCAN_IND) {
+			PRINTADV_ATT(hdev, bdaddr, type, "overwrite pending ADV with current ADV that will trigger a SCAN_REQ and returning");
 			store_pending_adv_report(hdev, bdaddr, bdaddr_type,
 						 rssi, flags, data, len);
 			return;
@@ -5325,6 +5396,7 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 		/* The advertising reports cannot be merged, so clear
 		 * the pending report and send out a device found event.
 		 */
+		PRINTADV_ATT(hdev, bdaddr, type, "clearing pending and calling mgmt_device_found for ADV that will not trigger a SCAN_REQ and returning");
 		clear_pending_adv_report(hdev);
 		mgmt_device_found(hdev, bdaddr, LE_LINK, bdaddr_type, NULL,
 				  rssi, flags, data, len, NULL, 0);
@@ -5335,6 +5407,7 @@ static void process_adv_report(struct hci_dev *hdev, u8 type, bdaddr_t *bdaddr,
 	 * the new event is a SCAN_RSP. We can therefore proceed with
 	 * sending a merged device found event.
 	 */
+	PRINTADV_ATT(hdev, bdaddr, type, "calling mgmt_device_found for pending ADV_IND or ADV_SCAN_IND, clearing pending and returning (func end)");
 	mgmt_device_found(hdev, &d->last_adv_addr, LE_LINK,
 			  d->last_adv_addr_type, NULL, rssi, d->last_adv_flags,
 			  d->last_adv_data, d->last_adv_data_len, data, len);
