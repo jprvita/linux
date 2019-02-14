@@ -1206,8 +1206,14 @@ static void hci_cc_le_set_scan_param(struct hci_dev *hdev, struct sk_buff *skb)
 		return;
 
 	cp = hci_sent_cmd_data(hdev, HCI_OP_LE_SET_SCAN_PARAM);
-	if (!cp)
+	if (!cp) {
+		BT_ERR("%s: hci_cc_le_set_scan_param: hci_sent_cmd_data returned NULL, returning",
+		hdev->name);
 		return;
+	}
+
+	BT_INFO("%s: hci_cc_le_set_scan_param: scan type %s", hdev->name,
+		cp->type == LE_SCAN_PASSIVE ? "passive" : "active");
 
 	hci_dev_lock(hdev);
 
@@ -3103,6 +3109,13 @@ static void hci_cmd_complete_evt(struct hci_dev *hdev, struct sk_buff *skb,
 
 	*opcode = __le16_to_cpu(ev->opcode);
 	*status = skb->data[sizeof(*ev)];
+
+	BT_INFO("%s: hci_cmd_complete_evt: opcode 0x%4X%s status %d", hdev->name,
+		*opcode,
+		*opcode == HCI_OP_LE_SET_RANDOM_ADDR ? " LE_SET_RANDOM_ADDR" :
+		*opcode == HCI_OP_LE_SET_SCAN_PARAM ? " LE_SET_SCAN_PARAM" :
+		*opcode == HCI_OP_LE_SET_SCAN_ENABLE ? " LE_SET_SCAN_ENABLE" :
+		"", *status);
 
 	skb_pull(skb, sizeof(*ev));
 

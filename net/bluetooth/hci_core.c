@@ -3595,6 +3595,11 @@ int hci_send_cmd(struct hci_dev *hdev, __u16 opcode, __u32 plen,
 	struct sk_buff *skb;
 
 	BT_DBG("%s opcode 0x%4.4x plen %d", hdev->name, opcode, plen);
+	BT_INFO("%s: hci_send_cmd: opcode 0x%4.4x%s", hdev->name, opcode,
+		opcode == HCI_OP_LE_SET_RANDOM_ADDR ? " LE_SET_RANDOM_ADDR" :
+		opcode == HCI_OP_LE_SET_SCAN_PARAM ? " LE_SET_SCAN_PARAM" :
+		opcode == HCI_OP_LE_SET_SCAN_ENABLE ? " LE_SET_SCAN_ENABLE" :
+		"");
 
 	skb = hci_prepare_cmd(hdev, opcode, plen, param);
 	if (!skb) {
@@ -3649,13 +3654,29 @@ void *hci_sent_cmd_data(struct hci_dev *hdev, __u16 opcode)
 {
 	struct hci_command_hdr *hdr;
 
-	if (!hdev->sent_cmd)
+	BT_INFO("%s: hci_sent_cmd_data: getting data for previous HCI request opcode 0x%4X%s",
+		hdev->name, opcode,
+		opcode == HCI_OP_LE_SET_RANDOM_ADDR ? " LE_SET_RANDOM_ADDR" :
+		opcode == HCI_OP_LE_SET_SCAN_PARAM ? " LE_SET_SCAN_PARAM" :
+		opcode == HCI_OP_LE_SET_SCAN_ENABLE ? " LE_SET_SCAN_ENABLE" :
+		"");
+	if (!hdev->sent_cmd) {
+		BT_ERR("%s: hci_sent_cmd_data: No previously sent command",
+			hdev->name);
 		return NULL;
+	}
 
 	hdr = (void *) hdev->sent_cmd->data;
 
-	if (hdr->opcode != cpu_to_le16(opcode))
+	if (hdr->opcode != cpu_to_le16(opcode)) {
+		BT_ERR("%s: hci_sent_cmd_data: previously sent opcode 0x%4X%s does not match requested opcode 0x%4X",
+			hdev->name, __le16_to_cpu(hdr->opcode),
+			__le16_to_cpu(hdr->opcode) == HCI_OP_LE_SET_RANDOM_ADDR ? " LE_SET_RANDOM_ADDR" :
+			__le16_to_cpu(hdr->opcode) == HCI_OP_LE_SET_SCAN_PARAM ? " LE_SET_SCAN_PARAM" :
+			__le16_to_cpu(hdr->opcode) == HCI_OP_LE_SET_SCAN_ENABLE ? " LE_SET_SCAN_ENABLE" :
+			"", opcode);
 		return NULL;
+	}
 
 	BT_DBG("%s opcode 0x%4.4x", hdev->name, opcode);
 
@@ -4366,6 +4387,7 @@ void hci_req_cmd_complete(struct hci_dev *hdev, u16 opcode, u8 status,
 	unsigned long flags;
 
 	BT_DBG("opcode 0x%04x status 0x%02x", opcode, status);
+	BT_INFO("%s: hci_req_cmd_complete: opcode 0x%04x status 0x%02x", hdev->name, opcode, status);
 
 	/* If the completed command doesn't match the last one that was
 	 * sent we need to do special handling of it.
@@ -4480,8 +4502,8 @@ static void hci_cmd_work(struct work_struct *work)
 	struct hci_dev *hdev = container_of(work, struct hci_dev, cmd_work);
 	struct sk_buff *skb;
 
-	BT_DBG("%s cmd_cnt %d cmd queued %d", hdev->name,
-	       atomic_read(&hdev->cmd_cnt), skb_queue_len(&hdev->cmd_q));
+	BT_INFO("%s: hci_cmd_work: cmd_cnt %d cmd queued %d", hdev->name,
+		atomic_read(&hdev->cmd_cnt), skb_queue_len(&hdev->cmd_q));
 
 	/* Send queued commands */
 	if (atomic_read(&hdev->cmd_cnt)) {
@@ -4493,6 +4515,15 @@ static void hci_cmd_work(struct work_struct *work)
 
 		hdev->sent_cmd = skb_clone(skb, GFP_KERNEL);
 		if (hdev->sent_cmd) {
+			struct hci_command_hdr *sent = (void *) hdev->sent_cmd->data;
+			u16 opcode = __le16_to_cpu(sent->opcode);
+			BT_WARN("%s: hci_cmd_work: sending opcode 0x%4X%s to controller",
+				hdev->name, opcode,
+				opcode == HCI_OP_LE_SET_RANDOM_ADDR ? " LE_SET_RANDOM_ADDR" :
+				opcode == HCI_OP_LE_SET_SCAN_PARAM ? " LE_SET_SCAN_PARAM" :
+				opcode == HCI_OP_LE_SET_SCAN_ENABLE ? " LE_SET_SCAN_ENABLE" :
+				"");
+
 			atomic_dec(&hdev->cmd_cnt);
 			hci_send_frame(hdev, skb);
 			if (test_bit(HCI_RESET, &hdev->flags))

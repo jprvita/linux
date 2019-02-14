@@ -311,12 +311,21 @@ void hci_req_add_ev(struct hci_request *req, u16 opcode, u32 plen,
 	struct sk_buff *skb;
 
 	BT_DBG("%s opcode 0x%4.4x plen %d", hdev->name, opcode, plen);
+	BT_WARN("%s: hci_req_add_ev: queueing 0x%4X%s plen %d",
+		hdev->name, opcode,
+		opcode == HCI_OP_LE_SET_RANDOM_ADDR ? " LE_SET_RANDOM_ADDR" :
+		opcode == HCI_OP_LE_SET_SCAN_PARAM ? " LE_SET_SCAN_PARAM" :
+		opcode == HCI_OP_LE_SET_SCAN_ENABLE ? " LE_SET_SCAN_ENABLE" :
+		"", plen);
 
 	/* If an error occurred during request building, there is no point in
 	 * queueing the HCI command. We can simply return.
 	 */
-	if (req->err)
+	if (req->err) {
+		BT_ERR("%s opcode 0x%4.4x err %d, returning",
+		       hdev->name, opcode, req->err);
 		return;
+	}
 
 	skb = hci_prepare_cmd(hdev, opcode, plen, param);
 	if (!skb) {
@@ -783,6 +792,9 @@ static void hci_req_start_scan(struct hci_request *req, u8 type, u16 interval,
 {
 	struct hci_dev *hdev = req->hdev;
 
+	BT_INFO("%s: hci_req_start_scan: type %s (%u)", hdev->name,
+		type == LE_SCAN_ACTIVE ? "active" : "passive", type);
+
 	/* Use ext scanning if set ext scan param and ext scan enable is
 	 * supported
 	 */
@@ -792,6 +804,8 @@ static void hci_req_start_scan(struct hci_request *req, u8 type, u16 interval,
 		struct hci_cp_le_scan_phy_params *phy_params;
 		u8 data[sizeof(*ext_param_cp) + sizeof(*phy_params) * 2];
 		u32 plen;
+
+		BT_INFO("%s: hci_req_start_scan: using ext scanning", hdev->name);
 
 		ext_param_cp = (void *)data;
 		phy_params = (void *)ext_param_cp->data;
@@ -838,6 +852,8 @@ static void hci_req_start_scan(struct hci_request *req, u8 type, u16 interval,
 	} else {
 		struct hci_cp_le_set_scan_param param_cp;
 		struct hci_cp_le_set_scan_enable enable_cp;
+
+		BT_INFO("%s: hci_req_start_scan: NOT using ext scanning", hdev->name);
 
 		memset(&param_cp, 0, sizeof(param_cp));
 		param_cp.type = type;
@@ -1833,7 +1849,7 @@ static void set_random_addr(struct hci_request *req, bdaddr_t *rpa)
 	 */
 	if (hci_dev_test_flag(hdev, HCI_LE_ADV) ||
 	    hci_lookup_le_connect(hdev)) {
-		BT_DBG("Deferring random address update");
+		BT_INFO("Deferring random address update");
 		hci_dev_set_flag(hdev, HCI_RPA_EXPIRED);
 		return;
 	}
@@ -1847,6 +1863,8 @@ int hci_update_random_address(struct hci_request *req, bool require_privacy,
 	struct hci_dev *hdev = req->hdev;
 	int err;
 
+	BT_INFO("%s: hci_update_random_address: require_privacy=%u, use_rpa=%u",
+		hdev->name, require_privacy, use_rpa);
 	/* If privacy is enabled use a resolvable private address. If
 	 * current RPA has expired or there is something else than
 	 * the current RPA in use, then generate a new one.
@@ -1860,15 +1878,19 @@ int hci_update_random_address(struct hci_request *req, bool require_privacy,
 		    !bacmp(&hdev->random_addr, &hdev->rpa))
 			return 0;
 
+		BT_INFO("%s: hci_update_random_address: RPA expired, generating a new one", hdev->name);
 		err = smp_generate_rpa(hdev, hdev->irk, &hdev->rpa);
 		if (err < 0) {
 			bt_dev_err(hdev, "failed to generate new RPA");
 			return err;
 		}
 
+		BT_INFO("%s: hci_update_random_address: setting new RPA", hdev->name);
 		set_random_addr(req, &hdev->rpa);
 
 		to = msecs_to_jiffies(hdev->rpa_timeout * 1000);
+		BT_INFO("%s: hci_update_random_address: queueing rpa_expired work to run in %ds",
+			hdev->name, hdev->rpa_timeout);
 		queue_delayed_work(hdev->workqueue, &hdev->rpa_expired, to);
 
 		return 0;
@@ -1897,6 +1919,7 @@ int hci_update_random_address(struct hci_request *req, bool require_privacy,
 		}
 
 		*own_addr_type = ADDR_LE_DEV_RANDOM;
+		BT_INFO("%s: hci_update_random_address: setting new NRPA", hdev->name);
 		set_random_addr(req, &nrpa);
 		return 0;
 	}
@@ -1915,9 +1938,11 @@ int hci_update_random_address(struct hci_request *req, bool require_privacy,
 	    (!hci_dev_test_flag(hdev, HCI_BREDR_ENABLED) &&
 	     bacmp(&hdev->static_addr, BDADDR_ANY))) {
 		*own_addr_type = ADDR_LE_DEV_RANDOM;
-		if (bacmp(&hdev->static_addr, &hdev->random_addr))
+		if (bacmp(&hdev->static_addr, &hdev->random_addr)) {
+			BT_INFO("%s: hci_update_random_address: using static address", hdev->name);
 			hci_req_add(req, HCI_OP_LE_SET_RANDOM_ADDR, 6,
 				    &hdev->static_addr);
+		}
 		return 0;
 	}
 
@@ -1925,6 +1950,7 @@ int hci_update_random_address(struct hci_request *req, bool require_privacy,
 	 * public address.
 	 */
 	*own_addr_type = ADDR_LE_DEV_PUBLIC;
+	BT_INFO("%s: hci_update_random_address: using public address", hdev->name);
 
 	return 0;
 }
@@ -2449,6 +2475,7 @@ static int active_scan(struct hci_request *req, unsigned long opt)
 	int err;
 
 	BT_DBG("%s", hdev->name);
+	BT_INFO("%s: active_scan", hdev->name);
 
 	if (hci_dev_test_flag(hdev, HCI_LE_ADV)) {
 		hci_dev_lock(hdev);
@@ -2506,6 +2533,10 @@ static void start_discovery(struct hci_dev *hdev, u8 *status)
 	unsigned long timeout;
 
 	BT_DBG("%s type %u", hdev->name, hdev->discovery.type);
+	BT_WARN("%s: hci_request.c: start_discovery: type %s (%u)", hdev->name,
+		hdev->discovery.type == DISCOV_TYPE_BREDR ? "BREDR" :
+		hdev->discovery.type == DISCOV_TYPE_LE ? "LE" : "INTERLEAVED",
+		hdev->discovery.type);
 
 	switch (hdev->discovery.type) {
 	case DISCOV_TYPE_BREDR:

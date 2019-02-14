@@ -3850,6 +3850,7 @@ static int start_discovery_internal(struct sock *sk, struct hci_dev *hdev,
 	int err;
 
 	BT_DBG("%s", hdev->name);
+	BT_INFO("%s: mgmt.c: start_discovery_internal", hdev->name);
 
 	hci_dev_lock(hdev);
 
@@ -3905,6 +3906,7 @@ failed:
 static int start_discovery(struct sock *sk, struct hci_dev *hdev,
 			   void *data, u16 len)
 {
+	BT_WARN("%s: mgmt.c: start_discovery", hdev->name);
 	return start_discovery_internal(sk, hdev, MGMT_OP_START_DISCOVERY,
 					data, len);
 }
@@ -3912,6 +3914,7 @@ static int start_discovery(struct sock *sk, struct hci_dev *hdev,
 static int start_limited_discovery(struct sock *sk, struct hci_dev *hdev,
 				   void *data, u16 len)
 {
+	BT_WARN("%s: mgmt.c: start_limited_discovery", hdev->name);
 	return start_discovery_internal(sk, hdev,
 					MGMT_OP_START_LIMITED_DISCOVERY,
 					data, len);
@@ -4462,6 +4465,7 @@ static int set_scan_params(struct sock *sk, struct hci_dev *hdev,
 	int err;
 
 	BT_DBG("%s", hdev->name);
+	BT_WARN("%s: mgmt.c: set_scan_params", hdev->name);
 
 	if (!lmp_le_capable(hdev))
 		return mgmt_cmd_status(sk, hdev->id, MGMT_OP_SET_SCAN_PARAMS,
